@@ -3,11 +3,7 @@
 import React, { FC, useState } from "react";
 import { CheckIcon } from "@heroicons/react/24/solid";
 
-export interface ListYourVenuePageProps {
-  className?: string;
-}
-
-const ListYourVenuePage: FC<ListYourVenuePageProps> = ({ className = "" }) => {
+const ListYourVenuePage = () => {
   const [isAnnual, setIsAnnual] = useState(false);
 
   const pricingPlans = [
@@ -75,7 +71,7 @@ const ListYourVenuePage: FC<ListYourVenuePageProps> = ({ className = "" }) => {
   ];
 
   return (
-    <div className={`nc-ListYourVenuePage ${className}`} data-nc-id="ListYourVenuePage">
+    <div className="nc-ListYourVenuePage" data-nc-id="ListYourVenuePage">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-6xl mx-auto">
           {/* Header Section */}
