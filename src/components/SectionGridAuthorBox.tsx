@@ -12,6 +12,9 @@ export interface SectionGridAuthorBoxProps {
   authors?: AuthorType[];
   boxCard?: "box1" | "box2";
   gridClassName?: string;
+  heading?: string;
+  description?: string;
+  showHeading?: boolean;
 }
 
 const DEMO_DATA = DEMO_AUTHORS.filter((_, i) => i < 10);
@@ -21,15 +24,20 @@ const SectionGridAuthorBox: FC<SectionGridAuthorBoxProps> = ({
   authors = DEMO_DATA,
   boxCard = "box1",
   gridClassName = "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 ",
+  heading = "Top 10 author of the month",
+  description = "Rating based on customer reviews",
+  showHeading = true,
 }) => {
   return (
     <div
       className={`nc-SectionGridAuthorBox relative ${className}`}
       data-nc-id="SectionGridAuthorBox"
     >
-      <Heading desc="Rating based on customer reviews" isCenter>
-        Top 10 author of the month
-      </Heading>
+      {showHeading && (
+        <Heading desc={description} isCenter>
+          {heading}
+        </Heading>
+      )}
       <div className={`grid gap-6 md:gap-8 ${gridClassName}`}>
         {authors.map((author, index) =>
           boxCard === "box2" ? (
