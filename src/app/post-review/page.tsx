@@ -1,13 +1,9 @@
 import React, { FC } from "react";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
-export interface PostReviewPageProps {
-  className?: string;
-}
-
-const PostReviewPage: FC<PostReviewPageProps> = ({ className = "" }) => {
-  return (
-    <div className={`nc-PostReviewPage ${className}`} data-nc-id="PostReviewPage">
+const PostReviewPage = () => {
+      return (
+      <div className="nc-PostReviewPage" data-nc-id="PostReviewPage">
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto text-center">
           {/* Main Heading */}
