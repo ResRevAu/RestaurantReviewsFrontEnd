@@ -1,3 +1,5 @@
+"use client";
+
 import React, { FC, useState } from "react";
 import { CheckIcon } from "@heroicons/react/24/solid";
 

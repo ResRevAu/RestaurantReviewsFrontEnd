@@ -27,7 +27,7 @@ const PostReviewPage: FC<PostReviewPageProps> = ({ className = "" }) => {
             <div className="flex items-center bg-white rounded-xl p-4 shadow-sm">
               {/* Search Icon */}
               <div className="flex-shrink-0 mr-3">
-                <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center">
+                <div className="w-10 h-10 bg-[#4f46e5] rounded-full flex items-center justify-center">
                   <MagnifyingGlassIcon className="w-5 h-5 text-white" />
                 </div>
               </div>
@@ -40,7 +40,7 @@ const PostReviewPage: FC<PostReviewPageProps> = ({ className = "" }) => {
               />
 
               {/* Search Button */}
-              <button className="ml-4 bg-purple-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-purple-700 transition-colors duration-200">
+              <button className="ml-4 bg-[#4f46e5] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#3730a3] transition-colors duration-200">
                 Search
               </button>
             </div>
