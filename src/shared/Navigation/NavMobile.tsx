@@ -32,13 +32,14 @@ interface ExtendedNavItem {
 // Extended navigation with icons
 const EXTENDED_NAV: ExtendedNavItem[] = [
   {
-    id: "home",
+    id: "find-food",
     href: "/" as PathName,
-    name: "Home",
+    name: "Find Food",
     icon: HomeIcon,
   },
-  { id: "post-review", name: "Post a Review or Photo", href: "/post-review" as PathName, icon: HomeIcon },
+  { id: "post-review", name: "Post a Review", href: "/post-review" as PathName, icon: HomeIcon },
   { id: "services", name: "Our Services", href: "/services" as PathName, icon: HomeIcon },
+  { id: "list-venue", name: "List Your Venue", href: "/add-listing/1" as PathName, icon: HomeIcon },
   { id: "support-contact", name: "Support/ Contact", href: "/contact" as PathName, icon: HomeIcon },
   {
     id: "about",

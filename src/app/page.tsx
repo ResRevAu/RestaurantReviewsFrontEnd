@@ -18,6 +18,7 @@ import SectionHero2 from "./(server-components)/SectionHero2";
 import SectionHero2ArchivePage from "./(server-components)/SectionHero2ArchivePage";
 import { Route } from "@/routers/types";
 import SectionHero1 from "./(server-components)/SectionHero1";
+import SectionAppNewsletter from "@/components/SectionAppNewsletter";
 const DEMO_CATS: TaxonomyType[] = [
   {
     id: "1",
@@ -164,6 +165,9 @@ function PageHome() {
        
 
         <SectionHero1 className="pt-10 lg:pt-16 lg:pb-16" />
+
+        {/* APP NEWSLETTER SECTION */}
+        <SectionAppNewsletter className="py-16 lg:py-24" />
 
         {/* SECTION 1 */}
         {/* <SectionSliderNewCategories categories={DEMO_CATS} className="mt-100" /> */}

@@ -257,8 +257,10 @@ const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
     const isActive = pathname === item.href;
     return (
       <Link
-        className={`inline-flex items-center text-sm xl:text-base font-normal text-neutral-700 dark:text-neutral-300 py-2 px-4 xl:px-5 rounded-full hover:text-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-200 dark:hover:text-neutral-1200 ${
-          isActive ? "bg-primary-50 text-primary-300 dark:bg-primary-300 dark:text-primary-00" : ""
+        className={`inline-flex items-center text-sm xl:text-base font-normal py-2 px-4 xl:px-5 rounded-full relative transition-all duration-300 ease-in-out ${
+          isActive 
+            ? "text-white after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:transform after:-translate-x-1/2 after:w-8 after:h-0.5 after:bg-[#f19628] after:transition-all after:duration-300" 
+            : "text-white hover:bg-[#feba10] hover:text-black after:content-[''] after:absolute after:bottom-0 after:left-1/2 after:transform after:-translate-x-1/2 after:w-0 after:h-0.5 after:bg-[#f19628] after:transition-all after:duration-300"
         }`}
         href={item.href || ""}
       >

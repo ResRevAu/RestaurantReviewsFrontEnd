@@ -42,8 +42,8 @@ const Logo: React.FC<LogoProps> = ({
         
         {/* Text beside logo */}
         <div className="ml-3 flex flex-col">
-          <span className="text-xl font-extrabold leading-none text-neutral-900 dark:text-white">Restaurant</span>
-          <span className="text-xl font-extrabold leading-none text-neutral-900 dark:text-white">Reviews</span>
+          <span className="text-xl font-extrabold leading-none text-white">Restaurant</span>
+          <span className="text-xl font-extrabold leading-none text-white">Reviews</span>
         </div>
       </div>
 
