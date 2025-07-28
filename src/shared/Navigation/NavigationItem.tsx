@@ -254,7 +254,17 @@ const NavigationItem: FC<NavigationItemWithRouterProps> = ({ menuItem }) => {
 
   // ===================== MENU MAIN MENU =====================
   const renderMainItem = (item: NavItemType) => {
-    const isActive = pathname === item.href;
+    // More precise active state checking
+    let isActive = false;
+    
+    if (item.href === "/") {
+      // "Find Food" should only be active on the exact root path
+      isActive = pathname === "/";
+    } else {
+      // Other items should be active on exact match or if pathname starts with their href
+      isActive = pathname === item.href || pathname.startsWith(item.href);
+    }
+    
     return (
       <Link
         className={`inline-flex items-center text-sm xl:text-base font-normal py-2 px-4 xl:px-5 rounded-full relative transition-all duration-300 ease-in-out ${
