@@ -6,7 +6,7 @@ const NAVIGATION_ITEMS = [
   { id: "find-food", name: "Find Food", href: "/" as PathName },
   { id: "post-review", name: "Post a Review", href: "/post-review" as PathName },
   { id: "services", name: "Our Services", href: "/services" as PathName },
-  { id: "list-venue", name: "List Your Venue", href: "/add-listing/1" as PathName },
+  { id: "list-venue", name: "List Your Venue", href: "/list-venue" as PathName },
   { id: "support-contact", name: "Support / Contact", href: "/contact" as PathName },
 ];
 

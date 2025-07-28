@@ -117,7 +117,7 @@ const ListYourVenuePage: FC<ListYourVenuePageProps> = ({ className = "" }) => {
             {pricingPlans.map((plan) => (
               <div
                 key={plan.id}
-                className={`${plan.cardStyle} rounded-2xl p-8 shadow-lg relative ${
+                className={`${plan.cardStyle} rounded-2xl p-8 shadow-lg relative transition-all duration-300 ease-in-out transform hover:scale-105 hover:shadow-xl ${
                   plan.isPopular ? "ring-2 ring-[#4f46e5] ring-offset-4" : ""
                 }`}
               >
