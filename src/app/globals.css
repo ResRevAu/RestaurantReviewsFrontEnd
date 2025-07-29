@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Custom styles for Manage My Restaurant button */
+.manage-restaurant-btn {
+  background-color: #87e64b !important;
+}
+
+.manage-restaurant-btn:hover {
+  background-color: #87e64b !important;
+  opacity: 0.9 !important;
+}
