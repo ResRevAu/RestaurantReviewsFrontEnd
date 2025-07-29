@@ -3,6 +3,7 @@
 import React, { useState, Fragment, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   PlusIcon,
   GlobeAltIcon,
@@ -81,6 +82,10 @@ const SectionHero: React.FC<SectionHeroProps> = ({ className = "" }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  
+  // Check if we're on the listing-stay-map page
+  const isListingPage = pathname === "/listing-stay-map";
 
   const closeModalMoreFilter = () => setIsOpenMoreFilter(false);
   const openModalMoreFilter = () => setIsOpenMoreFilter(true);
@@ -183,21 +188,25 @@ const SectionHero: React.FC<SectionHeroProps> = ({ className = "" }) => {
   };
 
   return (
-    <div className={`nc-SectionHero relative pt-6 lg:pt-8 ${className} mb-[100px] mt-[50px] `}>
+    <div className={`nc-SectionHero relative ${isListingPage ? 'pt-5 pb-5' : 'pt-6 lg:pt-8 mb-[100px] mt-[50px]'} ${className}`}>
       {/* Background Image */}
      
 
       {/* Content */}
       <div className="relative z-10 container mx-auto">
         <div className="flex flex-col items-center justify-center">
-          <h1 className="text-4xl mt-20  text-gray-600 font-semibold">What can I help with?</h1>
+          {!isListingPage && (
+            <h1 className="text-4xl mt-20 text-gray-600 font-semibold">What can I help with?</h1>
+          )}
           
           {/* ChatGPT-style Search Bar */}
           <div className="w-full max-w-5xl  mx-auto">
-            {/* Current Location Display */}
-            <div className="mb-1 flex justify-center">
-              <CurrentLocationDisplay className=" px-4 py-2 rounded-lg  text-black " />
-            </div>
+            {/* Current Location Display - Hidden on listing page */}
+            {!isListingPage && (
+              <div className="mb-1 flex justify-center">
+                <CurrentLocationDisplay className=" px-4 py-2 rounded-lg  text-black " />
+              </div>
+            )}
 
             <div className="relative flex flex-col bg-white rounded-2xl shadow-lg">
               {/* Input and Icons Row */}
@@ -248,7 +257,10 @@ const SectionHero: React.FC<SectionHeroProps> = ({ className = "" }) => {
                   
                 </div>
                 <div className="flex items-center gap-3 pr-4">
-                  <button className="p-2 bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors">
+                  <button 
+                    onClick={() => window.location.href = '/listing-stay-map'}
+                    className="p-2 bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors"
+                  >
                     <MagnifyingGlassIcon className="w-6 h-6 text-white stroke-2" />
                   </button>
                 </div>

@@ -248,10 +248,10 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
       params.delete('propertyTypes');
     }
     
-    router.push(`/listing-stay-map?${params.toString()}`);
+    router.push(`/listing-stay-map?${params.toString()}` as any);
   };
 
-  const [filtersVisible, setFiltersVisible] = useState(true);
+  const [filtersVisible, setFiltersVisible] = useState(false);
 
   const toggleFilters = () => {
     setFiltersVisible(!filtersVisible);
@@ -332,6 +332,8 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
               defaultCenter={DEMO_STAYS[0].map}
               bootstrapURLKeys={{
                 key: "AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY",
+                version: "weekly",
+                libraries: ["places"]
               }}
               yesIWantToUseGoogleMapApiInternals
             >

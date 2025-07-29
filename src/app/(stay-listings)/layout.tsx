@@ -61,21 +61,9 @@ const Layout = ({ children, params }: LayoutProps) => {
 
   return (
     <div className={`nc-ListingStayPage relative `}>
-      <BgGlassmorphism className="absolute inset-x-0 md:top- xl:top- min-h-170 max-h-200 pl-20 py-24 flex overflow-hidden z-0 h-180" image="/images/banner1.jpg" spanClassName="hidden"/>
+      {/* <BgGlassmorphism className="absolute inset-x-0 md:top- xl:top- min-h-170 max-h-200 pl-20 py-24 flex overflow-hidden z-0 h-180" image="/images/banner1.jpg" spanClassName="hidden"/> */}
 
-      {/* SECTION HERO */}
-      <div className="container pt-10 pb-24 lg:pt-16 lg:pb-28 mt-5">
-        {/* SectionHeroArchivePage might need to be a Client Component or adjusted */}
-        {/* if it relies on props derived from server-only data, but let's try first */}
-        <SectionHeroArchivePage 
-          currentPage={currentTabValue} 
-          currentTab={currentTabValue}
-          defaultSearchText={defaultSearchTextValue}
-          defaultSearchDistance={defaultSearchDistanceValue}
-          defaultSelectedItems={defaultSelectedItemsValue}
-          tabClassName={tabClassNameValue}
-        />
-      </div>
+      {/* SECTION HERO - Removed empty container */}
 
       {children} {/* Render children passed from the page */}
 
