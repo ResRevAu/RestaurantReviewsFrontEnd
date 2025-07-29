@@ -4,10 +4,9 @@
 
 /* Custom styles for Manage My Restaurant button */
 .manage-restaurant-btn {
-  background-color: #87e64b !important;
+  background-color: #4f46e5 !important;
 }
 
 .manage-restaurant-btn:hover {
   background-color: #87e64b !important;
-  opacity: 0.9 !important;
 }
