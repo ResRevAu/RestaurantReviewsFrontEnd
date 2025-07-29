@@ -1,5 +1,6 @@
 import React, { FC } from "react";
 import Image from "next/image";
+import BackgroundSection from "@/components/BackgroundSection";
 
 export interface SectionAppNewsletterProps {
   className?: string;
@@ -8,9 +9,12 @@ export interface SectionAppNewsletterProps {
 const SectionAppNewsletter: FC<SectionAppNewsletterProps> = ({ className = "" }) => {
   return (
     <div
-      className={`nc-SectionAppNewsletter relative flex flex-col lg:flex-row lg:items-center p-10 bg-gray-100 ${className} `}
+      className={`nc-SectionAppNewsletter relative py-16 ${className}`}
       data-nc-id="SectionAppNewsletter"
     >
+      <BackgroundSection className="bg-neutral-100 dark:bg-black dark:bg-opacity-20" />
+      <div className="relative z-10">
+        <div className="flex flex-col lg:flex-row lg:items-center">
                         {/* Left Section - Mobile App Mockup */}
                   <div className="flex-shrink-0 mb-10 lg:mb-0 lg:mr-10 lg:w-2/5">
                     <Image
@@ -105,6 +109,8 @@ const SectionAppNewsletter: FC<SectionAppNewsletterProps> = ({ className = "" })
                           </div>
                         </div>
                       </div>
+        </div>
+      </div>
         </div>
       </div>
     </div>
