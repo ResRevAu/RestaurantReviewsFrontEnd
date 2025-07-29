@@ -53,7 +53,7 @@ const MainNav1: FC<MainNav1Props> = ({ className = "" }) => {
             )}
             
             <ButtonPrimary 
-              className="self-center bg-[#87e64b] hover:bg-[#84e049] transition-all duration-300 rounded-md" 
+              className="self-center bg-[#87e64b] hover:bg-[#87e64b] transition-all duration-300 rounded-md" 
               href={"/manage-restaurant" as Route}
             >
               Manage My Restaurant
