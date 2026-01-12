@@ -726,12 +726,12 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
                 isAccessible = step.id <= currentStep || 
                               socialLoginUsed || 
                               completedSteps.includes(1) || 
-                              (formData.first_name && formData.last_name);
+                              !!(formData.first_name && formData.last_name);
               } else if (step.id === 3) {
                 isAccessible = step.id <= currentStep || 
                               completedSteps.includes(2) || 
                               formData.restaurant_id !== null || 
-                              (formData.restaurant_name && formData.restaurant_street_number);
+                              !!(formData.restaurant_name && formData.restaurant_street_number);
               } else if (step.id === 4) {
                 isAccessible = step.id <= currentStep || 
                               completedSteps.includes(3) || 
