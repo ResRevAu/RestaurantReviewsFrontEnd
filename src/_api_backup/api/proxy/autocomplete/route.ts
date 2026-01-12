@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server';
+// This file is excluded from static export builds
+// API routes don't work with output: 'export' in Next.js
+// This route will be skipped during build
 
-// Force dynamic rendering - this route cannot be statically generated
-export const dynamic = 'force-dynamic';
+import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);

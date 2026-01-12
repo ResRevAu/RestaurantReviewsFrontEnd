@@ -51,6 +51,8 @@ const nextConfig = {
   output: 'export',
   trailingSlash: false,
   staticPageGenerationTimeout: 180,
+  // Exclude API routes from static export
+  // API routes in app/api are automatically skipped with output: 'export'
 };
 
 module.exports = nextConfig;
