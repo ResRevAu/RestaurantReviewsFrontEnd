@@ -6,6 +6,7 @@ export interface SimpleUserLocation {
   city?: string;
   state?: string;
   country?: string;
+  postcode?: string;
   accuracy?: number;
   isManuallySet?: boolean;
 }

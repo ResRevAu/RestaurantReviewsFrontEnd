@@ -77,6 +77,8 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
     restaurant_state: "",
     restaurant_postcode: "",
     restaurant_country: "Australia",
+    restaurant_latitude: undefined as number | string | undefined,
+    restaurant_longitude: undefined as number | string | undefined,
     
     // Step 3: Plan
     selected_plan_id: null as number | null,
@@ -353,18 +355,26 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
 
       // Add restaurant data if adding new restaurant
       if (!formData.restaurant_id && formData.restaurant_name) {
+        // Build proper street_address from street_number and street_name
+        const streetAddress = [
+          formData.restaurant_street_number,
+          formData.restaurant_street_name
+        ].filter(Boolean).join(' ').trim();
+        
         apiData.restaurant = {
           name: formData.restaurant_name,
           phone: formData.restaurant_phone,
           website: formData.restaurant_website,
           email: formData.restaurant_email,
-          street_address: formData.restaurant_street_name,
-          room_number: formData.restaurant_unit_number,
+          street_address: streetAddress || formData.restaurant_street_name,
+          room_number: formData.restaurant_unit_number || null,
           street_number: formData.restaurant_street_number,
           city: formData.restaurant_suburb,
           state: formData.restaurant_state,
           postal_code: formData.restaurant_postcode,
           country: formData.restaurant_country,
+          latitude: formData.restaurant_latitude ? parseFloat(String(formData.restaurant_latitude)) : null,
+          longitude: formData.restaurant_longitude ? parseFloat(String(formData.restaurant_longitude)) : null,
         };
       } else if (formData.restaurant_id) {
         apiData.restaurant_id = formData.restaurant_id;
@@ -402,19 +412,44 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
       if (!response.ok) {
         if (response.status === 400) {
           if (data.error) {
+            let errorMessage = '';
+            
             if (typeof data.error === 'object') {
               const errors = Object.entries(data.error)
                 .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs[0] : msgs}`)
                 .join(', ');
-              throw new Error(errors);
+              errorMessage = errors;
+            } else {
+              errorMessage = data.error;
             }
-            throw new Error(data.error);
+            
+            // Check for specific error cases
+            const errorLower = errorMessage.toLowerCase();
+            
+            if (errorLower.includes('already has an owner') || 
+                errorLower.includes('restaurant already owned') ||
+                errorLower.includes('owner exists')) {
+              // Navigate back to Step 2
+              setCurrentStep(2);
+              throw new Error('The selected restaurant already has an owner. Please select a different restaurant or add a new one.');
+            }
+            
+            if (errorLower.includes('restaurant') && errorLower.includes('not found')) {
+              setCurrentStep(2);
+              throw new Error('The selected restaurant was not found. Please select a different restaurant.');
+            }
+            
+            throw new Error(errorMessage);
           } else if (data.errors) {
             const errors = Object.entries(data.errors)
               .map(([field, msgs]) => `${field}: ${Array.isArray(msgs) ? msgs[0] : msgs}`)
               .join(', ');
             throw new Error(errors);
           }
+        } else if (response.status === 409) {
+          // Conflict - likely restaurant already has owner
+          setCurrentStep(2);
+          throw new Error('The selected restaurant already has an owner. Please select a different restaurant or add a new one.');
         }
         throw new Error(`Registration failed. Status: ${response.status}. ${JSON.stringify(data)}`);
       }
