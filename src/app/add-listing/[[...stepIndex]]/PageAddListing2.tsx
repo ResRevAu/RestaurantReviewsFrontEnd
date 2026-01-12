@@ -62,7 +62,7 @@ const PageAddListing2: FC<PageAddListing2Props> = () => {
               <div className="rounded-xl overflow-hidden">
                 <GoogleMapReact
                   bootstrapURLKeys={{
-                    key: "AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY",
+                    key: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAQD5YvZZew6WTYNXxjDbmtbKtYFB2eGmk",
                   }}
                   yesIWantToUseGoogleMapApiInternals
                   defaultZoom={15}

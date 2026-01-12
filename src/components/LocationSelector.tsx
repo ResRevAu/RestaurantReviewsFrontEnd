@@ -24,7 +24,7 @@ interface GeocodingResult {
 }
 
 const MAX_RECENT_SEARCHES = 5;
-const GOOGLE_MAPS_API_KEY = "AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY";
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyAQD5YvZZew6WTYNXxjDbmtbKtYFB2eGmk";
 
 const loader = new Loader({
   apiKey: GOOGLE_MAPS_API_KEY,

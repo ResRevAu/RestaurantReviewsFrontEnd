@@ -1,81 +1,58 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { MapPinIcon } from "@heroicons/react/24/outline";
-
-interface LocationDetails {
-  lat: number;
-  lng: number;
-  city?: string;
-  state?: string;
-  postcode?: string;
-  country?: string;
-}
+import { MapPinIcon, ExclamationTriangleIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { getCurrentLocation, UserLocation, LocationError, assessLocationAccuracy } from '@/services/locationService';
+import LocationOverrideDialog from './LocationOverrideDialog';
 
 interface CurrentLocationDisplayProps {
   className?: string;
 }
 
 const CurrentLocationDisplay: React.FC<CurrentLocationDisplayProps> = ({ className = "" }) => {
-  const [location, setLocation] = useState<LocationDetails | null>(null);
+  const [location, setLocation] = useState<UserLocation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isLocationAccurate, setIsLocationAccurate] = useState(true);
+  const [showLocationDialog, setShowLocationDialog] = useState(false);
 
   useEffect(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          try {
-            const { latitude, longitude } = position.coords;
-            
-            // Try to get address using reverse geocoding with better parameters
-            try {
-              const response = await fetch(
-                `https://nominatim.openstreetmap.org/reverse?` + 
-                `format=json&lat=${latitude}&lon=${longitude}&` +
-                `zoom=10&addressdetails=1&accept-language=en`
-              );
-              const data = await response.json();
-              
-              // Extract relevant address components
-              const address = data.address || {};
-              setLocation({
-                lat: latitude,
-                lng: longitude,
-                city: address.city || address.town || address.village || address.suburb,
-                state: address.state,
-                postcode: address.postcode,
-                country: address.country
-              });
-            } catch (error) {
-              // If reverse geocoding fails, just show coordinates
-              setLocation({
-                lat: latitude,
-                lng: longitude
-              });
-            }
-            
-            setLoading(false);
-          } catch (error) {
-            setError("Failed to get location details");
-            setLoading(false);
-          }
-        },
-        (error) => {
-          setError("Please enable location access");
-          setLoading(false);
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
+    const getLocation = async () => {
+      try {
+        console.log('📍 CurrentLocationDisplay: Getting location...');
+        const userLocation = await getCurrentLocation();
+        
+        console.log('✅ CurrentLocationDisplay: Location received:', userLocation);
+        setLocation(userLocation);
+        
+        // Assess location accuracy globally
+        const accuracyAssessment = assessLocationAccuracy(userLocation);
+        setIsLocationAccurate(accuracyAssessment.isAccurate);
+        
+        console.log('📊 Location accuracy assessment:', accuracyAssessment);
+        
+        if (!accuracyAssessment.isAccurate) {
+          console.log('⚠️ Location accuracy concerns:', accuracyAssessment.recommendations);
         }
-      );
-    } else {
-      setError("Geolocation is not supported by your browser");
-      setLoading(false);
-    }
+        
+      } catch (locationError) {
+        console.error('❌ CurrentLocationDisplay: Location error:', locationError);
+        const err = locationError as LocationError;
+        setError(err.userMessage || 'Unable to get your location');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    getLocation();
   }, []);
+
+  const handleLocationOverride = (newLocation: UserLocation) => {
+    console.log('🔧 Location overridden in CurrentLocationDisplay:', newLocation);
+    setLocation(newLocation);
+    setIsLocationAccurate(true); // Assume manual correction is accurate
+    setShowLocationDialog(false);
+  };
 
   if (loading) {
     return (
@@ -98,16 +75,50 @@ const CurrentLocationDisplay: React.FC<CurrentLocationDisplayProps> = ({ classNa
   if (!location) return null;
 
   return (
-    <div className={`flex items-center gap-2 text-sm text-neutral-600 ${className}`}>
-      <MapPinIcon className="w-7 h-7  text-indigo-600 font-bold bg-white rounded-full " />
-      <span className="truncate text-gray-600">
-        {location.city ? 
-          `${location.city}${location.state ? `, ${location.state}` : ''}${location.postcode ? ` ${location.postcode}` : ''}${location.country ? `, ${location.country}` : ''}` 
-          : 
-          `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
-        }
-      </span>
-    </div>
+    <>
+      <div className={`flex items-center gap-2 text-sm text-neutral-600 ${className}`}>
+        <div className="relative">
+          <MapPinIcon className="w-7 h-7 text-indigo-600 font-bold bg-white rounded-full" />
+          {!isLocationAccurate && (
+            <ExclamationTriangleIcon className="w-3 h-3 text-yellow-500 absolute -top-1 -right-1 bg-white rounded-full" />
+          )}
+        </div>
+        <div className="flex-grow">
+          <div className="flex items-center space-x-2">
+            <span className="truncate text-gray-600">
+              {location.city ? 
+                `${location.city}${location.state ? `, ${location.state}` : ''}${location.postcode ? ` ${location.postcode}` : ''}` 
+                : 
+                `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
+              }
+            </span>
+            <button
+              onClick={() => setShowLocationDialog(true)}
+              className="ml-2 p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded transition-colors"
+              title="Correct location"
+            >
+              <PencilIcon className="w-4 h-4" />
+            </button>
+          </div>
+          {!isLocationAccurate && (
+            <div className="text-xs text-yellow-600 mt-1 flex items-center space-x-1">
+              <ExclamationTriangleIcon className="w-3 h-3" />
+              <span>Location may be imprecise - click to correct</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Location Override Dialog */}
+      {showLocationDialog && location && (
+        <LocationOverrideDialog
+          isOpen={showLocationDialog}
+          onClose={() => setShowLocationDialog(false)}
+          currentLocation={location}
+          onLocationOverride={handleLocationOverride}
+        />
+      )}
+    </>
   );
 };
 

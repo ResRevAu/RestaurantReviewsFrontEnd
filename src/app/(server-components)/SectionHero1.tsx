@@ -3,7 +3,7 @@
 import React, { useState, Fragment, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   PlusIcon,
   GlobeAltIcon,
@@ -18,7 +18,7 @@ import {
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
 import LocationSelector from "@/components/LocationSelector";
-import CurrentLocationDisplay from "@/components/CurrentLocationDisplay";
+import SimpleLocationDisplay from "@/components/SimpleLocationDisplay";
 import DistanceSelector from "@/components/DistanceSelector";
 import Checkbox from "@/shared/Checkbox";
 import InternationalCuisinesDropdown from "@/components/InternationalCuisinesDropdown";
@@ -83,9 +83,22 @@ const SectionHero: React.FC<SectionHeroProps> = ({ className = "" }) => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   
   // Check if we're on the listing-stay-map page
   const isListingPage = pathname === "/listing-stay-map";
+
+  // Initialize search query from URL params on listing page (only once)
+  useEffect(() => {
+    if (isListingPage) {
+      const urlQuery = searchParams.get('query') || '';
+      // Only set if search query is empty (initial load)
+      if (urlQuery && !searchQuery) {
+        setSearchQuery(urlQuery);
+        console.log('🔄 Initialized search query from URL:', urlQuery);
+      }
+    }
+  }, [isListingPage]); // Remove searchQuery from dependencies to prevent overriding user input
 
   const closeModalMoreFilter = () => setIsOpenMoreFilter(false);
   const openModalMoreFilter = () => setIsOpenMoreFilter(true);
@@ -176,13 +189,33 @@ const SectionHero: React.FC<SectionHeroProps> = ({ className = "" }) => {
   const handleSuggestionSelect = (suggestion: Suggestion) => {
     console.log("Selected Suggestion:", suggestion);
     let newQuery = "";
-    if (suggestion.type === 'text') {
-      newQuery = suggestion.text;
-    } else if (suggestion.type === 'restaurant') {
-      newQuery = suggestion.name;
-    } else if (suggestion.type === 'dish') {
-      newQuery = suggestion.name;
+    
+    switch (suggestion.type) {
+      case 'restaurant':
+        newQuery = suggestion.name;
+        break;
+      case 'menu_item':
+        newQuery = suggestion.name;
+        break;
+      case 'venue_type':
+        newQuery = suggestion.name;
+        break;
+      case 'cuisine_type':
+        newQuery = suggestion.name;
+        break;
+      case 'amenity':
+        newQuery = suggestion.name;
+        break;
+      case 'recent':
+        newQuery = suggestion.text;
+        break;
+      case 'near_me':
+        newQuery = suggestion.text;
+        break;
+      default:
+        newQuery = searchQuery;
     }
+    
     setSearchQuery(newQuery);
     setIsSearchOpen(false);
   };
@@ -204,7 +237,12 @@ const SectionHero: React.FC<SectionHeroProps> = ({ className = "" }) => {
             {/* Current Location Display - Hidden on listing page */}
             {!isListingPage && (
               <div className="mb-1 flex justify-center">
-                <CurrentLocationDisplay className=" px-4 py-2 rounded-lg  text-black " />
+                <SimpleLocationDisplay 
+                  className="px-4 py-2 rounded-lg text-black" 
+                  onLocationChange={(location) => {
+                    console.log('🏠 Location updated in hero section:', location);
+                  }}
+                />
               </div>
             )}
 
@@ -224,23 +262,61 @@ const SectionHero: React.FC<SectionHeroProps> = ({ className = "" }) => {
                   <input
                     type="text"
                     placeholder="Search restaurants by name, cuisines, types, etc."
-                    
-                    className="w-full px-4 py-4 text-lg border-none focus:ring-0 focus:outline-none"
+                    className="w-full px-4 py-4 pr-10 text-lg border-none focus:ring-0 focus:outline-none"
                     value={searchQuery}
                     onChange={(e) => {      
                       setSearchQuery(e.target.value);
-                      setIsSearchOpen(e.target.value.trim().length > 0);
+                      setIsSearchOpen(true); // Always open when typing
+                      console.log('✏️ User edited search query:', e.target.value);
                     }}
                     onFocus={() => {
-                      if(searchQuery.trim().length > 0) setIsSearchOpen(true);
+                      setIsSearchOpen(true); // Always open on focus to show recent searches
+                    }}
+                    onKeyDown={(e) => {
+                      // Handle Enter key for search
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const params = new URLSearchParams();
+                        if (searchQuery.trim()) {
+                          params.set('query', searchQuery.trim());
+                        }
+                        const url = `/listing-stay-map${params.toString() ? '?' + params.toString() : ''}`;
+                        console.log('⌨️ Enter pressed, searching:', searchQuery.trim());
+                        window.location.href = url;
+                      }
+                      // Handle Escape key to close dropdown
+                      if (e.key === 'Escape') {
+                        setIsSearchOpen(false);
+                      }
                     }}
                   />
+                  
+                  {/* Clear button */}
+                  {searchQuery && (
+                    <button
+                      onClick={() => {
+                        setSearchQuery('');
+                        setIsSearchOpen(false);
+                        console.log('🗑️ Search query cleared');
+                        // If on listing page, redirect to clear results
+                        if (isListingPage) {
+                          window.location.href = '/listing-stay-map';
+                        }
+                      }}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-full transition-colors"
+                      title="Clear search"
+                    >
+                      <XMarkIcon className="w-5 h-5 text-neutral-400 hover:text-neutral-600" />
+                    </button>
+                  )}
+                  
                   {isSearchOpen && (
                     <PredictiveSearchDropdown 
                       query={searchQuery}
                       isOpen={isSearchOpen}
                       onClose={() => setIsSearchOpen(false)}
                       onSelectSuggestion={handleSuggestionSelect}
+                      showRecentSearches={true}
                     />
                   )}
                 </div>
@@ -258,7 +334,22 @@ const SectionHero: React.FC<SectionHeroProps> = ({ className = "" }) => {
                 </div>
                 <div className="flex items-center gap-3 pr-4">
                   <button 
-                    onClick={() => window.location.href = '/listing-stay-map'}
+                    onClick={() => {
+                      const params = new URLSearchParams();
+                      if (searchQuery.trim()) {
+                        params.set('query', searchQuery.trim());
+                      }
+                      // Add other filters here if needed
+                      const url = `/listing-stay-map${params.toString() ? '?' + params.toString() : ''}`;
+                      
+                      // Log search action
+                      console.log('🔍 SEARCH BUTTON CLICKED:');
+                      console.log('- Search Query:', searchQuery.trim());
+                      console.log('- URL Parameters:', params.toString());
+                      console.log('- Final URL:', url);
+                      
+                      window.location.href = url;
+                    }}
                     className="p-2 bg-indigo-600 hover:bg-indigo-700 rounded-full transition-colors"
                   >
                     <MagnifyingGlassIcon className="w-6 h-6 text-white stroke-2" />

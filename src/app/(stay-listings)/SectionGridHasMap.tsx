@@ -11,7 +11,12 @@ import TabFilters from "./TabFilters";
 import Heading2 from "@/shared/Heading2";
 import StayCard2 from "@/components/StayCard2";
 import { useSearchParams, useRouter } from "next/navigation";
-import { MapPinIcon, MagnifyingGlassIcon, AdjustmentsHorizontalIcon, HomeIcon, GlobeAsiaAustraliaIcon } from "@heroicons/react/24/outline";
+import { MapPinIcon, MagnifyingGlassIcon, AdjustmentsHorizontalIcon, HomeIcon, GlobeAsiaAustraliaIcon, ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { searchRestaurants, convertRestaurantToStayCard, getMockRestaurants, RestaurantSearchParams } from "@/services/restaurantApi";
+import LocationBasedMap from "@/components/LocationBasedMap";
+import ApiEndpointTester from "@/components/ApiEndpointTester";
+import { UserLocation, RestaurantWithDistance, formatDistance } from "@/services/locationService";
+import { SimpleUserLocation, formatDistanceSimple } from "@/services/simpleLocationService";
 
 // Global event for dropdown controls without URL params
 const triggerDropdownOpen = (type: 'filter' | 'distance' | 'property') => {
@@ -20,23 +25,328 @@ const triggerDropdownOpen = (type: 'filter' | 'distance' | 'property') => {
   window.dispatchEvent(event);
 };
 
-const DEMO_STAYS = DEMO_STAY_LISTINGS.filter((_, i) => i < 12);
 export interface SectionGridHasMapProps { }
 
 const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
   const [currentHoverID, setCurrentHoverID] = useState<string | number>(-1);
   const [showFullMapFixed, setShowFullMapFixed] = useState(false);
+  const [restaurants, setRestaurants] = useState<any[]>([]);
+  const [filteredRestaurants, setFilteredRestaurants] = useState<RestaurantWithDistance[]>([]);
+  const [userLocation, setUserLocation] = useState<SimpleUserLocation | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [apiDataSource, setApiDataSource] = useState<'API' | 'MOCK' | 'LOADING'>('LOADING');
   const router = useRouter();
 
   // Get search parameters from URL
   const searchParams = useSearchParams();
   const query = searchParams.get('query') || '';
-  const distance = searchParams.get('distance') || '0-10';
+  const distance = searchParams.get('distance') || '1-10';
   const category = searchParams.get('category') || '';
   const filters = searchParams.get('filters') || '';
+  const type = searchParams.get('type') || '';
+  const venueType = searchParams.get('venue_type') || '';
+  const cuisine = searchParams.get('cuisine') || '';
+  const amenity = searchParams.get('amenity') || '';
+  const restaurantId = searchParams.get('restaurant_id') || '';
+  const nearMe = searchParams.get('near_me') === 'true';
 
   // Process filters
   const filterItems = filters ? filters.split(',') : [];
+
+  // Fetch restaurants based on search parameters
+  useEffect(() => {
+    const fetchRestaurants = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        console.log('🔍 ===== RESTAURANT FETCH DEBUG START =====');
+        console.log('🔍 Input Parameters:');
+        console.log('  - Query:', query);
+        console.log('  - Venue Type:', venueType);
+        console.log('  - Cuisine:', cuisine);
+        console.log('  - Amenity:', amenity);
+        console.log('  - Type:', type);
+        console.log('  - Near Me:', nearMe);
+        console.log('  - Distance Range:', distance);
+        console.log('  - User Location Available:', !!userLocation);
+        
+        if (userLocation) {
+          console.log('🌍 Current User Location Being Used:');
+          console.log('  - Latitude:', userLocation.lat);
+          console.log('  - Longitude:', userLocation.lng);
+          console.log('  - City:', userLocation.city);
+          console.log('  - State:', userLocation.state);
+          console.log('  - Manually Set:', userLocation.isManuallySet);
+        }
+        
+        let restaurantData: any[] = [];
+        let apiSuccessful = false;
+        
+        console.log('🌐 ===== ATTEMPTING REAL API CALL =====');
+        
+        try {
+          // Build comprehensive search parameters for REAL restaurants near user's location
+          const searchParams: RestaurantSearchParams & {
+            userLocation?: { lat: number; lng: number; maxDistance?: number }
+          } = {
+            query: query || undefined,
+            venue_type: venueType || undefined,
+            cuisine: cuisine || undefined,
+            page: 1,
+            limit: 100, // High limit to get as many real restaurants as possible
+            userLocation: userLocation ? {
+              lat: userLocation.lat,
+              lng: userLocation.lng,
+              maxDistance: parseInt(distance.split('-')[1]) || 10
+            } : {
+              lat: 26.890149520911205, // User's coordinates as fallback
+              lng: 80.99192260849836,
+              maxDistance: 10
+            }
+          };
+
+          console.log('📋 REAL API Search Parameters with location:', searchParams);
+          console.log('🌐 Making API call to get REAL restaurants near user...');
+          
+          console.log('📡 ===== API CALL DETAILS =====');
+          const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://restaurantreviews.io';
+          console.log('🌐 API Base URL:', apiBaseUrl);
+          console.log('🌐 Full API URL Being Called:', `${apiBaseUrl}/api/restaurants/?approved=true&limit=100`);
+          console.log('🎯 Now using restaurantreviews.io as primary API endpoint');
+          console.log('📍 Location Parameters Sent:');
+          if (searchParams.userLocation) {
+            console.log('  - User Lat:', searchParams.userLocation.lat);
+            console.log('  - User Lng:', searchParams.userLocation.lng);
+            console.log('  - Max Distance:', searchParams.userLocation.maxDistance);
+          }
+          
+          const apiResponse = await searchRestaurants(searchParams);
+          
+          console.log('📡 ===== API RESPONSE ANALYSIS =====');
+          console.log('📊 Raw API Response:', apiResponse);
+          
+          if (apiResponse && apiResponse.results && apiResponse.results.length > 0) {
+            console.log('🎉 SUCCESS: REAL API restaurants received!');
+            console.log('📊 API Response Summary:');
+            console.log('  - Total Count in DB:', apiResponse.count);
+            console.log('  - Results Returned:', apiResponse.results.length);
+            console.log('  - Has Next Page:', !!apiResponse.next);
+            console.log('  - Has Previous Page:', !!apiResponse.previous);
+            
+            console.log('🗺️ First 5 API Restaurant Locations:');
+            apiResponse.results.slice(0, 5).forEach((restaurant, index) => {
+              console.log(`  🏪 API ${index + 1}. ${restaurant.name}:`);
+              console.log(`      📍 Raw Coordinates: lat=${restaurant.latitude}, lng=${restaurant.longitude}`);
+              console.log(`      📍 Address: ${restaurant.street_address}, ${restaurant.city}, ${restaurant.state}`);
+              console.log(`      📍 Venue Types:`, restaurant.venue_types?.map(v => v.name));
+              console.log(`      📍 Approved: ${restaurant.is_approved}`);
+            });
+            
+            // Convert REAL API restaurants to UI format
+            restaurantData = apiResponse.results.map(convertRestaurantToStayCard);
+            apiSuccessful = true;
+            setApiDataSource('API');
+            
+            console.log('✅ Converted API restaurants to UI format:', restaurantData.length);
+            console.log('🗺️ Converted Restaurant Map Coordinates:');
+            restaurantData.slice(0, 5).forEach((restaurant, index) => {
+              console.log(`  🏪 UI ${index + 1}. ${restaurant.title}:`);
+              console.log(`      📍 UI Coordinates: lat=${restaurant.map?.lat}, lng=${restaurant.map?.lng}`);
+              console.log(`      📍 Has Valid Coordinates: ${!!(restaurant.map?.lat && restaurant.map?.lng && restaurant.map?.lat !== 0 && restaurant.map?.lng !== 0)}`);
+              console.log(`      📍 Address: ${restaurant.address}`);
+            });
+            
+          } else {
+            console.log('📦 API Response Analysis:');
+            console.log('  - API Response Object:', !!apiResponse);
+            console.log('  - Has Results Array:', !!(apiResponse?.results));
+            console.log('  - Results Length:', apiResponse?.results?.length || 0);
+            console.log('🔄 API returned no valid results, using mock data...');
+          }
+        } catch (apiError) {
+          console.error('❌ REAL API request completely failed:', apiError);
+          console.log('🔄 Falling back to mock data with your coordinates...');
+        }
+        
+        // If API failed, use enhanced mock data filtered for user's location
+        if (!apiSuccessful) {
+          console.log('📦 ===== USING MOCK DATA FALLBACK =====');
+          console.log('📦 Reason: API call was not successful');
+          
+          // Get all mock restaurants
+          const allMockRestaurants = getMockRestaurants('');
+          console.log('📦 Total Mock Restaurants Available:', allMockRestaurants.length);
+          
+          // Show mock restaurant coordinates
+          console.log('🗺️ Mock Restaurant Coordinates:');
+          allMockRestaurants.forEach((restaurant, index) => {
+            console.log(`  🏪 MOCK ${index + 1}. ${restaurant.title}:`);
+            console.log(`      📍 Coordinates: lat=${restaurant.map?.lat}, lng=${restaurant.map?.lng}`);
+            console.log(`      📍 Address: ${restaurant.address}`);
+          });
+          
+          // Use all mock restaurants (they're already in Lucknow area)
+          restaurantData = allMockRestaurants;
+          setApiDataSource('MOCK');
+          console.log(`📍 Using all ${restaurantData.length} mock restaurants for Lucknow area`);
+        }
+        
+        console.log('📦 ===== FINAL RESTAURANT LOADING =====');
+        console.log('📊 Total restaurants being set:', restaurantData.length);
+        console.log('📊 Data source:', apiSuccessful ? 'REAL API' : 'MOCK DATA');
+        
+        setRestaurants(restaurantData);
+        
+        console.log('🗺️ Final Restaurant Summary:');
+        restaurantData.forEach((restaurant, index) => {
+          console.log(`  🏪 FINAL ${index + 1}. ${restaurant.title}:`);
+          console.log(`      📍 Final Coordinates: lat=${restaurant.map?.lat}, lng=${restaurant.map?.lng}`);
+          console.log(`      📍 Address: ${restaurant.address}`);
+          console.log(`      📍 Valid for Map: ${!!(restaurant.map?.lat && restaurant.map?.lng)}`);
+        });
+        
+        console.log('🔍 ===== RESTAURANT FETCH DEBUG END =====');
+        
+      } catch (error) {
+        console.error('❌ ===== ERROR IN RESTAURANT FETCHING =====');
+        console.error('❌ Error details:', error);
+        setError('Failed to load restaurants');
+        
+        // Always fallback to mock data with your coordinates
+        const mockRestaurants = getMockRestaurants('');
+        setRestaurants(mockRestaurants);
+        console.log('🆘 Emergency fallback: loaded mock restaurants:', mockRestaurants.length);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRestaurants();
+  }, [query, venueType, cuisine, amenity, type, nearMe]);
+
+  // Use filtered restaurants data for display
+  const DEMO_STAYS = filteredRestaurants.length > 0 ? filteredRestaurants : restaurants;
+
+  // ===== COMPREHENSIVE FILTERING DEBUG =====
+  console.log('🔍 ===== RESTAURANT FILTERING ANALYSIS =====');
+  console.log('📊 Current State:');
+  console.log('  - Raw Restaurants Loaded:', restaurants.length);
+  console.log('  - Filtered Restaurants:', filteredRestaurants.length);
+  console.log('  - Final Display Count:', DEMO_STAYS.length);
+  console.log('  - User Location Available:', !!userLocation);
+  console.log('  - Distance Range:', distance);
+  
+  if (userLocation) {
+    console.log('📍 User Location for Filtering:');
+    console.log('  - User Lat:', userLocation.lat);
+    console.log('  - User Lng:', userLocation.lng);
+    console.log('  - User City:', userLocation.city);
+  }
+  
+  console.log('🗺️ Why showing', DEMO_STAYS.length, 'restaurants:');
+  if (filteredRestaurants.length > 0) {
+    console.log('  ✅ Using filtered restaurants (distance-based filtering worked)');
+  } else {
+    console.log('  📦 Using raw restaurants (filtering returned 0, showing all as fallback)');
+    console.log('  📦 This explains why you see', restaurants.length, 'restaurants');
+  }
+  
+  // Debug each restaurant's relationship to user location
+  if (restaurants.length > 0 && userLocation) {
+    console.log('🔍 Distance Analysis for Each Restaurant:');
+    restaurants.forEach((restaurant, index) => {
+      if (restaurant.map?.lat && restaurant.map?.lng) {
+        const restaurantDistance = Math.sqrt(
+          Math.pow(restaurant.map.lat - userLocation.lat, 2) + 
+          Math.pow(restaurant.map.lng - userLocation.lng, 2)
+        ) * 111; // Rough km conversion
+        
+        const [minDist, maxDist] = distance.split('-').map(Number);
+        const maxDistance = maxDist || 10;
+        const isInRange = restaurantDistance <= maxDistance;
+        
+        console.log(`  📍 ${index + 1}. ${restaurant.title}:`);
+        console.log(`      📍 Restaurant: lat=${restaurant.map.lat}, lng=${restaurant.map.lng}`);
+        console.log(`      📍 Distance: ${restaurantDistance.toFixed(2)}km`);
+        console.log(`      📍 In Range (${maxDistance}km): ${isInRange ? '✅ YES' : '❌ NO'}`);
+        console.log(`      📍 Should Show: ${isInRange ? 'YES' : 'NO'}`);
+      } else {
+        console.log(`  ❌ ${index + 1}. ${restaurant.title}: NO COORDINATES`);
+      }
+    });
+  }
+  
+  console.log('🔍 ===== END FILTERING ANALYSIS =====');
+  
+  // ===== FINAL EXPLANATION SUMMARY =====
+  console.log('🎯 ===== WHY YOU SEE', DEMO_STAYS.length, 'RESTAURANTS - EXPLANATION =====');
+  
+  if (apiDataSource === 'API') {
+    console.log('📊 DATA SOURCE: REAL API RESTAURANTS');
+    console.log('  ✅ Successfully fetched restaurants from the backend API');
+    console.log('  🌐 API endpoint returned real restaurant data');
+  } else if (apiDataSource === 'MOCK') {
+    console.log('📊 DATA SOURCE: MOCK/FALLBACK RESTAURANTS');
+    console.log('  ❌ API call failed or returned no results');
+    console.log('  📦 Using mock restaurants with Lucknow coordinates as fallback');
+  } else {
+    console.log('📊 DATA SOURCE: STILL LOADING');
+  }
+  
+  if (userLocation) {
+    console.log('📍 LOCATION FILTERING:');
+    console.log(`  🌍 Your location: ${userLocation.city} (${userLocation.lat}, ${userLocation.lng})`);
+    console.log(`  📏 Distance range: ${distance} kilometers`);
+    
+    if (filteredRestaurants.length > 0) {
+      console.log(`  ✅ ${filteredRestaurants.length} restaurants are within your distance range`);
+      console.log('  ✅ Showing filtered restaurants based on your location');
+    } else {
+      console.log(`  ❌ 0 restaurants found within ${distance}km of your location`);
+      console.log(`  📦 Fallback: Showing all ${restaurants.length} restaurants regardless of distance`);
+      console.log('  📦 This is why you see more restaurants than expected');
+    }
+  } else {
+    console.log('📍 NO LOCATION FILTERING:');
+    console.log('  ❌ User location not available');
+    console.log(`  📦 Showing all ${restaurants.length} restaurants without distance filtering`);
+  }
+  
+  console.log('🎯 ===== SUMMARY =====');
+  console.log(`🔢 TOTAL RESTAURANTS DISPLAYED: ${DEMO_STAYS.length}`);
+  console.log(`📊 BREAKDOWN:`);
+  console.log(`  - Loaded from source: ${restaurants.length} restaurants`);
+  console.log(`  - After distance filtering: ${filteredRestaurants.length} restaurants`);
+  console.log(`  - Final display: ${DEMO_STAYS.length} restaurants`);
+  
+  if (DEMO_STAYS.length > filteredRestaurants.length && filteredRestaurants.length === 0) {
+    console.log('⚠️ EXPLANATION: You see more restaurants because:');
+    console.log('   1. Distance filtering found 0 restaurants within range');
+    console.log('   2. App falls back to showing all restaurants to avoid empty results');
+    console.log('   3. This prevents users from seeing a blank page');
+  }
+  
+  console.log('🎯 ===== END EXPLANATION =====');
+
+  // Handle location updates
+  const handleLocationUpdate = (location: SimpleUserLocation | null) => {
+    setUserLocation(location);
+    if (location) {
+      console.log('📍 User location updated:', location);
+      setLocationError(null);
+    } else {
+      setLocationError('Unable to get your location');
+    }
+  };
+
+  // Handle filtered restaurants update
+  const handleFilteredRestaurants = (filtered: RestaurantWithDistance[]) => {
+    setFilteredRestaurants(filtered);
+    console.log(`🔍 Restaurants filtered by distance: ${filtered.length}/${restaurants.length}`);
+  };
 
   // Handle clicking on filter pills - scroll to top and open dropdown
   const handleFilterPillClick = (type: 'filter' | 'distance' | 'property') => {
@@ -259,14 +569,59 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
 
   return (
     <div className="SectionGridHasMap" id="restaurant-results">
+      {/* API Endpoint Tester (Development Only) */}
+      {process.env.NODE_ENV === 'development' && <ApiEndpointTester />}
+      
       <div className="relative flex min-h-screen">
         {/* CARDSSSS */}
         <div className="min-h-screen w-full xl:w-[60%] 2xl:w-[60%] max-w-[1184px] flex-shrink-0 xl:px-8 ">
+          {/* Location guidance message */}
+          {locationError && (
+            <div className="mb-4 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+              <div className="flex items-start space-x-3">
+                <ExclamationTriangleIcon className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">Location access needed for better results</p>
+                  <p className="text-xs text-yellow-700 mt-1">
+                    {locationError} Enable location services to see restaurants near you with accurate distances.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* User location info */}
+          {userLocation && (
+            <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <MapPinIcon className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800">
+                      Your location: {userLocation.city ? `${userLocation.city}${userLocation.state ? ', ' + userLocation.state : ''}` : 'Current location'}
+                    </p>
+                    <p className="text-xs text-green-700">
+                      Showing restaurants within {distance} kilometers
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-green-800">{filteredRestaurants.length}</p>
+                  <p className="text-xs text-green-600">restaurants found</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="flex justify-between items-center mb-4">
             <Heading2
               heading={
                 <span className="text-3xl md:text-4xl font-bold text-neutral-900 dark:text-white">
-                  Restaurants in Australia
+                  {userLocation ? (
+                    `Restaurants ${userLocation.city ? `in ${userLocation.city}` : 'near you'}`
+                  ) : (
+                    'Restaurants in Australia'
+                  )}
                 </span>
               }
               subHeading={filtersVisible ? getSearchContent() : null}
@@ -281,17 +636,119 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
               <TabFilters page="stay" />
             </div>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 2xl:gap-x-6 gap-y-8">
-            {DEMO_STAYS.map((item) => (
-              <div
-                key={item.id}
-                onMouseEnter={() => setCurrentHoverID((_) => item.id)}
-                onMouseLeave={() => setCurrentHoverID((_) => -1)}
-              >
-                <StayCard2 data={item} />
+          {loading ? (
+            // Loading state
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 2xl:gap-x-6 gap-y-8">
+              {[...Array(6)].map((_, index) => (
+                <div key={index} className="animate-pulse">
+                  <div className="bg-neutral-200 dark:bg-neutral-700 h-64 rounded-lg mb-4"></div>
+                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded mb-2"></div>
+                  <div className="h-4 bg-neutral-200 dark:bg-neutral-700 rounded w-2/3"></div>
+                </div>
+              ))}
+            </div>
+          ) : error ? (
+            // Error state
+            <div className="col-span-full text-center py-16">
+              <div className="max-w-md mx-auto">
+                <div className="w-24 h-24 mx-auto mb-6 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                  <svg 
+                    className="w-12 h-12 text-red-500" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={1.5} 
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.268 16.5c-.77.833.192 2.5 1.732 2.5z" 
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
+                  Something went wrong
+                </h3>
+                <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+                  {error}. We're showing some sample restaurants instead.
+                </p>
+                <button 
+                  onClick={() => window.location.reload()}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Try again
+                </button>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : DEMO_STAYS.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-5 2xl:gap-x-6 gap-y-8">
+              {DEMO_STAYS.map((item) => (
+                <div
+                  key={item.id}
+                  onMouseEnter={() => setCurrentHoverID((_) => item.id)}
+                  onMouseLeave={() => setCurrentHoverID((_) => -1)}
+                  className="relative"
+                >
+                  <StayCard2 data={item} />
+                  {/* Distance badge for location-filtered results */}
+                  {item.distance !== undefined && userLocation && (
+                    <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs px-2 py-1 rounded-full shadow-lg">
+                      {formatDistanceSimple(item.distance)}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            // No results found message
+            <div className="col-span-full text-center py-16">
+              <div className="max-w-md mx-auto">
+                <div className="w-24 h-24 mx-auto mb-6 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center">
+                  <svg 
+                    className="w-12 h-12 text-neutral-400" 
+                    fill="none" 
+                    stroke="currentColor" 
+                    viewBox="0 0 24 24"
+                  >
+                    <path 
+                      strokeLinecap="round" 
+                      strokeLinejoin="round" 
+                      strokeWidth={1.5} 
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" 
+                    />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100 mb-3">
+                  No restaurants found
+                </h3>
+                <p className="text-neutral-600 dark:text-neutral-400 mb-6">
+                  {query ? (
+                    <>We couldn't find any restaurants matching "<span className="font-medium text-neutral-900 dark:text-neutral-100">{query}</span>"{userLocation ? ` within ${distance}km of your location` : ''}. Try adjusting your search or filters.</>
+                  ) : (
+                    <>We couldn't find any restaurants matching your criteria{userLocation ? ` within ${distance}km of your location` : ''}. Try adjusting your search or filters.</>
+                  )}
+                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">Try:</p>
+                  <ul className="text-sm text-neutral-600 dark:text-neutral-300 space-y-1">
+                    <li>• Searching for a different cuisine type (e.g., "Italian", "Chinese")</li>
+                    <li>• Expanding your distance range to {distance.split('-')[1] === '50' ? '100km' : `${Math.min(parseInt(distance.split('-')[1]) * 2, 50)}km`}</li>
+                    <li>• Removing some filters</li>
+                    <li>• Checking your spelling</li>
+                    {!userLocation && <li>• Enabling location services for more accurate results</li>}
+                  </ul>
+                </div>
+                <button 
+                  onClick={() => {
+                    router.push(`/listing-stay-map` as any);
+                  }}
+                  className="mt-6 px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                >
+                  Clear all filters
+                </button>
+              </div>
+            </div>
+          )}
           <div className="flex mt-16 justify-center items-center">
             <Pagination />
           </div>
@@ -327,26 +784,15 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
                 label="Search as I move the map"
               />
             </div>
-            <GoogleMapReact
-              defaultZoom={12}
-              defaultCenter={DEMO_STAYS[0].map}
-              bootstrapURLKeys={{
-                key: "AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY",
-                version: "weekly",
-                libraries: ["places"]
-              }}
-              yesIWantToUseGoogleMapApiInternals
-            >
-              {DEMO_STAYS.map((item) => (
-                <AnyReactComponent
-                  isSelected={currentHoverID === item.id}
-                  key={item.id}
-                  lat={item.map.lat}
-                  lng={item.map.lng}
-                  listing={item}
-                />
-              ))}
-            </GoogleMapReact>
+            
+            {/* Location-based Map with filtering */}
+            <LocationBasedMap
+              restaurants={restaurants}
+              distanceRange={distance}
+              onLocationUpdate={handleLocationUpdate}
+              onFilteredRestaurants={handleFilteredRestaurants}
+              currentHoverID={currentHoverID}
+            />
           </div>
         </div>
       </div>
