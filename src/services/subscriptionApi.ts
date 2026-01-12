@@ -23,8 +23,8 @@ export interface SubscriptionPlan {
 }
 
 const getApiBaseUrl = () => {
-  // Use environment variable if set, otherwise default to local development server
-  return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+  // Use environment variable if set, otherwise default to production server
+  return process.env.NEXT_PUBLIC_API_BASE_URL || 'https://restaurantreviews.io';
 };
 
 export interface FetchPlansParams {

@@ -58,7 +58,7 @@ const Step2RestaurantSelection: React.FC<Step2RestaurantSelectionProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const getApiBaseUrl = () => {
-    return process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000';
+    return process.env.NEXT_PUBLIC_API_BASE_URL || 'https://restaurantreviews.io';
   };
 
   const getImageUrl = (imagePath: string | null | undefined): string | null => {

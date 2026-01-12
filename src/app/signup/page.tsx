@@ -377,7 +377,8 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
       
       console.log('Sending registration data:', JSON.stringify(apiData, null, 2));
       
-      const response = await fetch("http://35.92.149.12:8000/api/auth/register/", {
+      const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://restaurantreviews.io';
+      const response = await fetch(`${apiBaseUrl}/api/auth/register/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
