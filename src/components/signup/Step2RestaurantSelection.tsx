@@ -74,8 +74,8 @@ const Step2RestaurantSelection: React.FC<Step2RestaurantSelectionProps> = ({
     return process.env.NEXT_PUBLIC_API_BASE_URL || 'https://restaurantreviews.io';
   };
 
-  const getImageUrl = (imagePath: string | null | undefined): string | null => {
-    if (!imagePath) return null;
+  const getImageUrl = (imagePath: string | null | undefined): string | undefined => {
+    if (!imagePath) return undefined;
     
     if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
       return imagePath;
@@ -196,8 +196,8 @@ const Step2RestaurantSelection: React.FC<Step2RestaurantSelectionProps> = ({
               const rawImage = r.image || r.image_thumbnail || r.logo || 
                            (r.images && r.images.length > 0 ? (typeof r.images[0] === 'string' ? r.images[0] : r.images[0].image || r.images[0]) : null);
               
-              const image = rawImage ? getImageUrl(rawImage) : null;
-              const imageThumbnail = r.image_thumbnail || r.logo || rawImage;
+              const image = (rawImage && typeof rawImage === 'string') ? getImageUrl(rawImage) : undefined;
+              const imageThumbnailRaw = r.image_thumbnail || r.logo || rawImage;
               
               // Handle coordinates
               const coordinates = r.coordinates ? {
@@ -212,7 +212,7 @@ const Step2RestaurantSelection: React.FC<Step2RestaurantSelectionProps> = ({
                 id: r.id,
                 name: r.name,
                 image: image,
-                image_thumbnail: imageThumbnail ? getImageUrl(imageThumbnail) : image,
+                image_thumbnail: (imageThumbnailRaw && typeof imageThumbnailRaw === 'string') ? getImageUrl(imageThumbnailRaw) : image,
                 address: {
                   street_address: streetAddress,
                   room_number: roomNumber || undefined,
@@ -233,7 +233,9 @@ const Step2RestaurantSelection: React.FC<Step2RestaurantSelectionProps> = ({
             searchCache.current.set(cacheKey, formattedResults);
             if (searchCache.current.size > 50) {
               const firstKey = searchCache.current.keys().next().value;
-              searchCache.current.delete(firstKey);
+              if (firstKey) {
+                searchCache.current.delete(firstKey);
+              }
             }
             
             console.log('✅ Formatted results:', formattedResults.length);
