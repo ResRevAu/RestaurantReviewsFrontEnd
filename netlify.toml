@@ -9,12 +9,8 @@
   command = "npm run build"
   publish = "out"
 
-# For dynamic redirects and better support
-[[redirects]]
-  from = "/.netlify/functions/*"
-  to = "/.netlify/functions/:splat"
-  status = 200
-  force = true
+# Note: Netlify functions are handled automatically by Netlify
+# Redirects starting with /.netlify are not allowed in netlify.toml
 
 [[redirects]]
   from = "/*"
