@@ -83,8 +83,12 @@ export const authenticateWithGoogle = async (
  * Store authentication tokens and user data
  */
 export const storeAuthData = (response: SocialAuthResponse) => {
-  localStorage.setItem('access_token', response.access);
-  localStorage.setItem('refresh_token', response.refresh);
+  if (response.access) {
+    localStorage.setItem('access_token', response.access);
+  }
+  if (response.refresh) {
+    localStorage.setItem('refresh_token', response.refresh);
+  }
   localStorage.setItem('user', JSON.stringify(response.user));
   
   // Dispatch event to notify other components
