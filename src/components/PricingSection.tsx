@@ -39,12 +39,19 @@ const PricingSection = () => {
         console.log('📊 Plans count:', fetchedPlans?.length || 0);
         
         if (fetchedPlans && fetchedPlans.length > 0) {
-          console.log('✅ Setting plans:', fetchedPlans.map(p => ({
+          // Filter out "Free Plan" - only keep "Free Listing"
+          const filteredPlans = fetchedPlans.filter(plan => {
+            const planNameLower = plan.name.toLowerCase();
+            // Exclude "Free Plan" but keep "Free Listing"
+            return !(planNameLower === "free plan");
+          });
+          
+          console.log('✅ Setting plans:', filteredPlans.map(p => ({
             id: p.id,
             name: p.name,
             pricing_options: p.pricing_options
           })));
-          setPlans(fetchedPlans);
+          setPlans(filteredPlans);
         } else {
           console.warn('⚠️ No plans returned from API');
           // Try fetching all plans without filter
@@ -52,8 +59,14 @@ const PricingSection = () => {
           const allPlans = await fetchSubscriptionPlans();
           if (allPlans && allPlans.length > 0) {
             console.log('✅ Found plans without filter:', allPlans.length);
-            // Filter client-side for Restaurant Owner plans
-            const ownerPlans = allPlans.filter(p => p.plan_type === "Restaurant Owner");
+            // Filter client-side for Restaurant Owner plans and exclude "Free Plan"
+            const ownerPlans = allPlans.filter(p => {
+              const isOwnerPlan = p.plan_type === "Restaurant Owner";
+              const planNameLower = p.name.toLowerCase();
+              // Exclude "Free Plan" but keep "Free Listing"
+              const isNotFreePlan = planNameLower !== "free plan";
+              return isOwnerPlan && isNotFreePlan;
+            });
             if (ownerPlans.length > 0) {
               setPlans(ownerPlans);
             } else {

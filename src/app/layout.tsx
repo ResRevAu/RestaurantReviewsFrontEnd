@@ -7,6 +7,9 @@ import "@/styles/index.scss";
 import "rc-slider/assets/index.css";
 import Footer from "@/components/Footer";
 import FooterNav from "@/components/FooterNav";
+// Google OAuth Provider - DISABLED FOR NOW
+// Uncomment below to re-enable Google OAuth
+// import GoogleOAuthProviderWrapper from "@/components/providers/GoogleOAuthProvider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -24,11 +27,15 @@ export default function RootLayout({
   return (
     <html lang="en" className={poppins.className}>
       <body className="bg-white text-base dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200">
-        <ClientCommons />
-        <SiteHeader />
-        {children}
-        <FooterNav />
-        <Footer />
+        {/* Google OAuth Provider - DISABLED FOR NOW */}
+        {/* Uncomment below to re-enable Google OAuth */}
+        {/* <GoogleOAuthProviderWrapper> */}
+          <ClientCommons />
+          <SiteHeader />
+          {children}
+          <FooterNav />
+          <Footer />
+        {/* </GoogleOAuthProviderWrapper> */}
       </body>
     </html>
   );

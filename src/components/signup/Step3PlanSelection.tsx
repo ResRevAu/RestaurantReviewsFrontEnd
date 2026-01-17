@@ -7,15 +7,18 @@ import { fetchSubscriptionPlans, SubscriptionPlan } from "@/services/subscriptio
 interface Step3PlanSelectionProps {
   formData: {
     selected_plan_id: number | null;
+    billing_cycle?: "monthly" | "yearly";
   };
   setFormData: React.Dispatch<React.SetStateAction<any>>;
+  errors?: { [field: string]: string };
 }
 
 const Step3PlanSelection: React.FC<Step3PlanSelectionProps> = ({
   formData,
   setFormData,
+  errors = {},
 }) => {
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(formData.billing_cycle === "yearly" || false);
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -174,17 +177,32 @@ const Step3PlanSelection: React.FC<Step3PlanSelectionProps> = ({
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
+      <div className="text-center mb-6">
+        <h2 className="text-2xl sm:text-3xl font-bold text-neutral-900 dark:text-neutral-100 mb-2">
           Choose Plan
         </h2>
-        <div className="w-14 border-b border-neutral-200 dark:border-neutral-700 mt-2"></div>
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          Select a subscription plan for your restaurant
+        </p>
       </div>
+
+      {/* Error Message */}
+      {errors.selected_plan_id && (
+        <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+          <p className="text-sm text-red-800 dark:text-red-200 text-center">{errors.selected_plan_id}</p>
+        </div>
+      )}
 
       {/* Pricing Toggle */}
       <div className="flex items-center justify-center space-x-2">
         <button
-          onClick={() => setIsAnnual(false)}
+          onClick={() => {
+            setIsAnnual(false);
+            setFormData((prev: any) => ({
+              ...prev,
+              billing_cycle: "monthly",
+            }));
+          }}
           className={`px-6 py-2.5 rounded-full font-medium transition-all duration-200 ${
             !isAnnual
               ? "bg-gray-200 text-gray-900 shadow-sm"
@@ -194,7 +212,13 @@ const Step3PlanSelection: React.FC<Step3PlanSelectionProps> = ({
           Monthly
         </button>
         <button
-          onClick={() => setIsAnnual(true)}
+          onClick={() => {
+            setIsAnnual(true);
+            setFormData((prev: any) => ({
+              ...prev,
+              billing_cycle: "yearly",
+            }));
+          }}
           className={`px-6 py-2.5 rounded-full font-medium transition-all duration-200 ${
             isAnnual
               ? "bg-gray-200 text-gray-900 shadow-sm"
