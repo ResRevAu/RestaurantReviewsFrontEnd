@@ -855,7 +855,7 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
         // Check if response is HTML (Django error page)
         if (step2ResponseText.trim().startsWith('<!DOCTYPE') || step2ResponseText.includes('<html')) {
           // Try to extract error message from HTML
-          const errorMatch = step2ResponseText.match(/<pre class="exception_value">(.*?)<\/pre>/s);
+          const errorMatch = step2ResponseText.match(/<pre class="exception_value">([\s\S]*?)<\/pre>/);
           let errorMessage = errorMatch ? errorMatch[1].replace(/&#x27;/g, "'").trim() : 'Server error occurred';
           
           // Parse Django ValidationError format: {'restaurant': ['message']}
@@ -1483,7 +1483,7 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
                 onClick={handleStepNext}
                 disabled={
                   loading || 
-                  (currentStep === 1 && !socialLoginUsed && formData.phone_number && !phoneVerified)
+                  (currentStep === 1 && !socialLoginUsed && !!formData.phone_number && !phoneVerified)
                 }
                 className="px-8 py-2.5"
               >
